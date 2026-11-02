@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>古诗词库 · 中华诗词搜索与鉴赏</title>
+<meta name="description" content="34 万首中华古典诗词全文检索，唐诗、宋诗、宋词、元曲、诗经、楚辞。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23a63f2e'/><text x='50' y='72' font-size='62' text-anchor='middle' fill='%23fff' font-family='serif'>诗</text></svg>">
+<style>
+/* ============================================================
+   设计令牌
+   宣纸底 / 墨色字 / 朱砂点缀。诗词正文用宋体（衬线），
+   界面文字用无衬线——长文阅读靠衬线，操作控件靠清晰。
+   ============================================================ */
+:root {
+  --paper:      #faf7f0;
+  --paper-2:    #f3ede1;
+  --card:       #fffdf8;
+  --ink:        #1f1c18;
+  --ink-2:      #57514a;
+  --ink-3:      #7d7568;
+  --seal:       #a63f2e;
+  /* 实心填充专用：暗色模式下 --seal 会调亮做文字色，
+     直接拿来当按钮底色配白字会对比度不足，所以单独一个令牌 */
+  --seal-solid: #a63f2e;
+  --seal-soft:  #c9705e;
+  --seal-wash:  #f6e9e5;
+  --gold:       #b8935a;
+  --line:       #e2d9c8;
+  --line-soft:  #efe8db;
+  --shadow-sm:  0 1px 2px rgba(70,52,32,.05), 0 1px 8px rgba(70,52,32,.04);
+  --shadow-md:  0 2px 6px rgba(70,52,32,.06), 0 8px 24px rgba(70,52,32,.07);
+  --shadow-lg:  0 8px 24px rgba(70,52,32,.10), 0 24px 60px rgba(70,52,32,.12);
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --font-ui:   -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  --font-poem: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC",
+               "SimSun", serif;
+  --maxw: 980px;
+}
+
+[data-theme="dark"] {
+  --paper:      #15141a;
+  --paper-2:    #1d1c23;
+  --card:       #1b1a21;
+  --ink:        #e9e3d8;
+  --ink-2:      #a9a29a;
+  --ink-3:      #8d8680;
+  --seal:       #d4796a;
+  --seal-solid: #a8452f;
+  --seal-soft:  #b25f52;
+  --seal-wash:  #2a2022;
+  --gold:       #c8a468;
+  --line:       #2e2b35;
+  --line-soft:  #26242d;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,.35);
+  --shadow-md:  0 2px 8px rgba(0,0,0,.4);
+  --shadow-lg:  0 12px 40px rgba(0,0,0,.55);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  /* 宣纸的极淡纹理，靠叠加两层径向渐变实现，不引入图片 */
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(184,147,90,.045), transparent 42%),
+    radial-gradient(circle at 82% 78%, rgba(166,63,46,.035), transparent 46%);
+  background-attachment: fixed;
+  transition: background-color .3s, color .3s;
+}
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+
+/* 焦点可见性：键盘用户必须能看清当前位置 */
+:focus-visible {
+  outline: 2px solid var(--seal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   顶栏：品牌 / 导航 / 主题切换 + 常驻搜索框
+   搜索是核心动作，不能藏在二级页面里。
+   ============================================================ */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line-soft);
+  transition: background-color .3s, border-color .3s;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .topbar {
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+  }
+}
+.topbar-inner { max-width: var(--maxw); margin: 0 auto; padding: 12px 20px 10px; }
+
+.bar-row { display: flex; align-items: center; gap: 16px; }
+
+.brand {
+  font-size: 21px; font-weight: 700; letter-spacing: 3px;
+  color: var(--ink); white-space: nowrap; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; font-family: var(--font-poem);
+}
+.brand .seal {
+  width: 26px; height: 26px; border-radius: 5px;
+  background: var(--seal-solid); color: #fff;
+  font-size: 15px; font-weight: 600;
+  display: grid; place-items: center;
+  letter-spacing: 0; line-height: 1;
+  box-shadow: 0 1px 3px rgba(166,63,46,.35);
+}
+.brand em { font-style: normal; color: var(--seal); }
+
+.tabs { display: flex; gap: 2px; margin-left: auto; }
+.tab {
+  font-family: inherit; font-size: 14px; color: var(--ink-2);
+  background: none; border: none; cursor: pointer;
+  padding: 7px 13px; border-radius: var(--r-sm);
+  letter-spacing: 1px; transition: color .15s, background-color .15s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); background: var(--paper-2); }
+.tab.active { color: var(--seal); font-weight: 600; background: var(--seal-wash); }
+
+.icon-btn {
+  width: 34px; height: 34px; flex: none;
+  display: grid; place-items: center;
+  background: none; border: 1px solid var(--line); border-radius: var(--r-sm);
+  color: var(--ink-2); cursor: pointer; font-size: 15px;
+  transition: color .15s, border-color .15s, background-color .15s;
+}
+.icon-btn:hover { color: var(--seal); border-color: var(--seal-soft); background: var(--seal-wash); }
+
+/* 搜索框 */
+.searchbox {
+  position: relative; display: flex; align-items: center;
+  margin-top: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color .18s, box-shadow .18s;
+  box-shadow: var(--shadow-sm);
+}
+.searchbox:focus-within {
+  border-color: var(--seal-soft);
+  box-shadow: 0 0 0 3px var(--seal-wash);
+}
+.searchbox .ico {
+  position: absolute; left: 15px; font-size: 15px;
+  color: var(--ink-3); pointer-events: none;
+}
+#search-input {
+  flex: 1; min-width: 0;
+  font-family: var(--font-poem); font-size: 16px;
+  color: var(--ink); background: none; border: none; outline: none;
+  padding: 12px 44px 12px 42px;
+}
+#search-input::placeholder { color: var(--ink-3); }
+.searchbox .hint {
+  position: absolute; right: 12px;
+  font-family: var(--font-ui); font-size: 11px;
+  color: var(--ink-3); background: var(--paper-2);
+  border: 1px solid var(--line-soft); border-radius: 5px;
+  padding: 1px 6px; pointer-events: none;
+}
+
+/* ============================================================
+   视图容器
+   ============================================================ */
+.view { display: none; padding: 26px 0 72px; }
+.view.active { display: block; animation: fadeUp .28s ease both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   每日一诗 · 主视觉
+   ============================================================ */
+.hero {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 44px 44px 30px;
+  text-align: center;
+  overflow: hidden;
+}
+/* 右上角淡朱砂印痕，纯装饰 */
+.hero::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, var(--seal-wash) 0%, transparent 68%);
+  pointer-events: none;
+}
+/* 左侧细竖线，模拟书页边栏 */
+.hero::after {
+  content: ''; position: absolute; left: 26px; top: 34px; bottom: 34px;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--line), transparent);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; letter-spacing: 2px; color: var(--seal);
+  background: var(--seal-wash);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px; padding: 5px 15px;
+  margin-bottom: 22px;
+  position: relative;
+}
+.hero-eyebrow .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--seal); flex: none;
+}
+
+.hero-title {
+  font-family: var(--font-poem);
+  font-size: 30px; font-weight: 700; letter-spacing: 4px;
+  color: var(--ink); line-height: 1.4;
+  margin-bottom: 10px;
+  position: relative;
+}
+.hero-meta {
+  font-size: 14px; color: var(--ink-2);
+  margin-bottom: 26px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.hero-meta .dyn {
+  display: inline-block; background: var(--seal-solid); color: #fff;
+  font-size: 11px; letter-spacing: 1px;
+  padding: 1px 8px; border-radius: 4px;
+}
+
+.hero-body {
+  font-family: var(--font-poem);
+  font-size: 21px; line-height: 2.35; letter-spacing: 2.5px;
+  color: var(--ink);
+  max-width: 560px; margin: 0 auto;
+  position: relative;
+}
+.hero-body p { margin-bottom: 3px; }
+
+.hero-tags {
+  display: flex; gap: 7px; justify-content: center; flex-wrap: wrap;
+  margin-top: 24px;
+}
+.hero-tags span {
+  font-size: 11.5px; color: var(--ink-3);
+  background: var(--paper-2);
+  border-radius: 999px; padding: 3px 11px;
+}
+
+.hero-actions {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  margin-top: 26px; padding-top: 20px;
+  border-top: 1px dashed var(--line);
+}
+
+/* 通用按钮 */
+.btn {
+  font-family: inherit; font-size: 13.5px; letter-spacing: .5px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 17px; border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card); color: var(--ink-2);
+  cursor: pointer;
+  transition: all .16s;
+  white-space: nowrap;
+}
+.btn:hover { color: var(--seal); border-color: var(--seal-soft); background: var(--seal-wash); }
+.btn:active { transform: scale(.97); }
+.btn-primary {
+  background: var(--seal-solid); color: #fff; border-color: var(--seal-solid);
+  box-shadow: 0 2px 8px rgba(166,63,46,.24);
+}
+.btn-primary:hover { background: var(--seal-soft); border-color: var(--seal-soft); color: #fff; }
+
+/* ============================================================
+   区块标题
+   ============================================================ */
+.sec-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin: 40px 0 16px;
+}
+.sec-title {
+  font-family: var(--font-poem);
+  font-size: 17px; font-weight: 700; letter-spacing: 2.5px;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-title::before {
+  content: ''; width: 3px; height: 15px; border-radius: 2px;
+  background: var(--seal);
+}
+.sec-more {
+  font-size: 13px; color: var(--ink-3); background: none; border: none;
+  cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px;
+}
+.sec-more:hover { color: var(--seal); background: var(--seal-wash); }
+
+/* ============================================================
+   体裁导航
+   ============================================================ */
+.cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 11px; }
+.cat-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 18px 16px 16px;
+  text-align: left; cursor: pointer;
+  font-family: inherit;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.cat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--line);
+}
+/* 悬停时底部泛出朱砂色，给点击反馈 */
+.cat-card::after {
+  content: ''; position: absolute; left: 0; bottom: 0;
+  width: 100%; height: 2px;
+  background: var(--seal);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .22s;
+}
+.cat-card:hover::after { transform: scaleX(1); }
+
+.cat-name {
+  font-family: var(--font-poem);
+  font-size: 17px; font-weight: 600; letter-spacing: 2px;
+  color: var(--ink); margin-bottom: 3px;
+}
+.cat-count {
+  font-size: 12px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   诗人
+   ============================================================ */
+.poet-groups { display: flex; flex-direction: column; gap: 22px; }
+.poet-group h4 {
+  font-size: 12.5px; font-weight: 500; letter-spacing: 2px;
+  color: var(--ink-3); margin-bottom: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line-soft);
+}
+/* 榜单口径说明：这个榜按收录数量排，不是文学史地位，必须说清楚 */
+.poet-note {
+  font-family: var(--font-ui);
+  font-size: 11.5px; line-height: 1.7; color: var(--ink-2);
+  margin: -4px 0 18px; letter-spacing: 0;
+}
+.poet-note--lead {
+  margin: 0 0 22px; padding: 11px 15px;
+  font-size: 12px; line-height: 1.75; color: var(--ink-2);
+  background: var(--card);
+  border-left: 2px solid var(--seal);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.poet-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+/* 诗人页是 50 个，用 5 列正好 10 行排满 */
+.poet-grid--full { grid-template-columns: repeat(5, 1fr); }
+.poet-chip {
+  font-family: var(--font-poem);
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 9px 8px; cursor: pointer;
+  text-align: center; font-size: 13.5px; color: var(--ink);
+  transition: all .15s;
+  line-height: 1.35;
+}
+.poet-chip:hover {
+  background: var(--seal-solid); color: #fff; border-color: var(--seal-solid);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(166,63,46,.25);
+}
+.poet-chip .count {
+  display: block; font-family: var(--font-ui);
+  font-size: 10.5px; color: var(--ink-3); margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.poet-chip:hover .count { color: rgba(255,255,255,.82); }
+
+/* ============================================================
+   搜索页
+   ============================================================ */
+.filters { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
+.chip {
+  font-family: inherit; font-size: 13px;
+  padding: 6px 15px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--ink-2); cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.chip:hover { border-color: var(--seal-soft); color: var(--seal); }
+.chip.active {
+  background: var(--seal-solid); border-color: var(--seal-solid);
+  color: #fff; font-weight: 500;
+}
+
+/* 供程序化设置状态用；视觉上隐藏但对辅助技术可见 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.search-meta {
+  font-size: 13px; color: var(--ink-3);
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+  min-height: 20px;
+}
+.search-meta .loading { color: var(--seal); }
+
+.results { display: flex; flex-direction: column; gap: 9px; }
+
+.result-item {
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: border-color .16s, box-shadow .16s, transform .16s;
+  box-shadow: var(--shadow-sm);
+}
+.result-item:hover {
+  border-color: var(--line);
+  box-shadow: var(--shadow-md);
+  transform: translateX(3px);
+}
+
+.ri-top {
+  display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+.ri-title {
+  font-family: var(--font-poem);
+  font-size: 16.5px; font-weight: 600; letter-spacing: 1.5px;
+  color: var(--ink);
+}
+.ri-cat {
+  font-size: 10.5px; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: 4px;
+  padding: 0 6px; flex: none; letter-spacing: .5px;
+}
+/* 主题名篇角标：用朱砂实底，和灰色体裁标签区分开 */
+.ri-theme {
+  font-family: var(--font-ui);
+  font-size: 10.5px; color: #fff; background: var(--seal-solid);
+  border-radius: 4px; padding: 1px 7px; flex: none; letter-spacing: .5px;
+}
+.ri-author { font-size: 12.5px; color: var(--ink-3); margin-bottom: 7px; }
+.ri-preview {
+  font-family: var(--font-poem);
+  font-size: 14.5px; color: var(--ink-2); line-height: 1.7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+mark {
+  background: color-mix(in srgb, var(--gold) 46%, transparent);
+  color: inherit; border-radius: 3px; padding: 0 2px;
+  font-weight: 600;
+}
+
+.load-more {
+  text-align: center; padding: 20px; margin-top: 6px;
+  font-size: 13.5px; color: var(--ink-3); cursor: pointer;
+  border: 1px dashed var(--line); border-radius: var(--r-md);
+  transition: all .16s;
+}
+.load-more:hover { color: var(--seal); border-color: var(--seal-soft); background: var(--seal-wash); }
+
+/* 空状态 */
+.empty { text-align: center; padding: 64px 20px; color: var(--ink-3); }
+.empty .mark {
+  font-family: var(--font-poem); font-size: 44px;
+  color: var(--line); margin-bottom: 14px; letter-spacing: 4px;
+}
+.empty p { font-size: 14.5px; margin-bottom: 6px; }
+.empty .sub { font-size: 13px; opacity: .8; }
+
+/* 骨架屏：需要加载数据时先给出结构，而不是留一片空白 */
+.skeleton { display: flex; flex-direction: column; gap: 9px; }
+.sk-item {
+  background: var(--card); border: 1px solid var(--line-soft);
+  border-radius: var(--r-md); padding: 18px 20px;
+}
+.sk-line {
+  height: 11px; border-radius: 5px;
+  background: linear-gradient(90deg, var(--line-soft) 25%, var(--paper-2) 50%, var(--line-soft) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ============================================================
+   详情抽屉
+   长诗（离骚 300+ 行）用居中弹窗很难读，改成右侧抽屉：
+   占满高度、独立滚动、宽度可控。
+   ============================================================ */
+.drawer-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(30,24,18,.38);
+  opacity: 0; visibility: hidden;
+  transition: opacity .26s, visibility .26s;
+}
+.drawer-overlay.show { opacity: 1; visibility: visible; }
+
+.drawer {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: min(600px, 100%);
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.22,.9,.3,1);
+}
+.drawer-overlay.show .drawer { transform: none; }
+
+.drawer-head {
+  flex: none;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.drawer-head-text { flex: 1; min-width: 0; }
+.d-title {
+  font-family: var(--font-poem);
+  font-size: 20px; font-weight: 700; letter-spacing: 2px;
+  color: var(--ink); line-height: 1.4; margin-bottom: 4px;
+}
+.d-author { font-size: 13px; color: var(--ink-2); }
+.d-author .dyn {
+  display: inline-block; background: var(--seal-solid); color: #fff;
+  font-size: 10.5px; padding: 0 7px; border-radius: 3px; margin: 0 5px;
+}
+.close-btn {
+  flex: none; width: 32px; height: 32px;
+  display: grid; place-items: center;
+  background: none; border: 1px solid var(--line); border-radius: var(--r-sm);
+  color: var(--ink-2); font-size: 18px; cursor: pointer; line-height: 1;
+  transition: all .15s;
+}
+.close-btn:hover { color: var(--seal); border-color: var(--seal-soft); background: var(--seal-wash); }
+
+.drawer-body { flex: 1; overflow-y: auto; padding: 32px 30px 40px; }
+.d-sub {
+  font-size: 12.5px; color: var(--ink-3);
+  text-align: center; margin-bottom: 22px; letter-spacing: 1px;
+}
+.d-body {
+  font-family: var(--font-poem);
+  font-size: 20px; line-height: 2.5; letter-spacing: 1.8px;
+  color: var(--ink); text-align: center;
+  text-wrap: pretty;
+}
+.d-body p { margin-bottom: 6px; }
+
+.drawer-foot {
+  flex: none;
+  padding: 13px 22px;
+  border-top: 1px solid var(--line-soft);
+  display: flex; gap: 9px; flex-wrap: wrap;
+  background: var(--card);
+}
+
+/* ============================================================
+   提示条
+   ============================================================ */
+.toast {
+  position: fixed; left: 50%; bottom: 32px;
+  transform: translate(-50%, 14px);
+  background: var(--ink); color: var(--paper);
+  font-size: 13.5px; letter-spacing: .5px;
+  padding: 10px 22px; border-radius: 999px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0; visibility: hidden;
+  transition: opacity .22s, transform .22s, visibility .22s;
+  z-index: 300; white-space: nowrap;
+}
+.toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+
+/* ============================================================
+   关于
+   ============================================================ */
+.prose {
+  background: var(--card); border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg); padding: 36px 40px;
+  box-shadow: var(--shadow-sm);
+}
+.prose h2 {
+  font-family: var(--font-poem);
+  font-size: 19px; letter-spacing: 2px; margin-bottom: 18px; color: var(--ink);
+}
+.prose p { font-size: 14.5px; color: var(--ink-2); margin-bottom: 12px; line-height: 1.9; }
+.prose a { color: var(--seal); text-decoration: none; border-bottom: 1px solid var(--seal-soft); }
+.prose a:hover { background: var(--seal-wash); }
+.prose kbd {
+  font-family: var(--font-ui); font-size: 11px;
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 6px; color: var(--ink-2);
+}
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; margin: 20px 0;
+}
+.stat { background: var(--paper-2); border-radius: var(--r-sm); padding: 12px 14px; }
+.stat .k { font-size: 12px; color: var(--ink-3); margin-bottom: 2px; }
+.stat .v {
+  font-family: var(--font-poem); font-size: 18px; font-weight: 600;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+
+footer {
+  text-align: center; padding: 28px 20px 40px;
+  font-size: 12.5px; color: var(--ink-3);
+  border-top: 1px solid var(--line-soft);
+}
+footer a { color: var(--seal); text-decoration: none; }
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 720px) {
+  .wrap, .topbar-inner { padding-left: 14px; padding-right: 14px; }
+  .bar-row { gap: 8px; }
+  .brand { font-size: 18px; letter-spacing: 2px; }
+  .brand .seal { width: 23px; height: 23px; font-size: 13px; }
+  .tabs { gap: 0; }
+  .tab { padding: 6px 8px; font-size: 13px; letter-spacing: 0; }
+  .icon-btn { width: 30px; height: 30px; font-size: 13px; }
+  .searchbox .hint { display: none; }
+  #search-input { padding-right: 14px; font-size: 15px; }
+
+  .view { padding: 18px 0 56px; }
+  .hero { padding: 30px 20px 22px; border-radius: var(--r-md); }
+  .hero::after { display: none; }
+  .hero-title { font-size: 24px; letter-spacing: 3px; }
+  .hero-body { font-size: 18px; letter-spacing: 2px; line-height: 2.15; }
+  .hero-actions { gap: 8px; }
+  .btn { padding: 7px 14px; font-size: 13px; }
+
+  .cats { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .cat-card { padding: 15px 14px 13px; }
+  .cat-name { font-size: 16px; }
+
+  .sec-head { margin: 30px 0 13px; }
+  .sec-title { font-size: 16px; }
+
+  .poet-grid { grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .poet-grid--full { grid-template-columns: repeat(4, 1fr); }
+  .poet-chip { font-size: 13px; padding: 8px 6px; }
+
+  .result-item { padding: 14px 15px; }
+  .ri-title { font-size: 15.5px; }
+  .ri-preview { font-size: 13.5px; }
+
+  .drawer { width: 100%; }
+  .drawer-body { padding: 26px 18px 32px; }
+  .d-body { font-size: 18px; letter-spacing: 2px; line-height: 2.3; }
+  .drawer-head { padding: 14px 16px; }
+  .drawer-foot { padding: 11px 16px; }
+
+  .prose { padding: 24px 18px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 380px) {
+  .tab { padding: 6px 6px; font-size: 12px; }
+  .brand em { display: none; }
+}
+
+/* 尊重系统「减少动效」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 顶栏 ============ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="bar-row">
+      <button class="brand" onclick="goView('home')" aria-label="回到首页">
+        <span class="seal">诗</span>
+        <span>古<em>诗词</em>库</span>
+      </button>
+
+      <nav class="tabs" role="tablist" aria-label="主导航">
+        <button class="tab active" id="nav-home"   onclick="goView('home')"   role="tab">首页</button>
+        <button class="tab"        id="nav-search" onclick="goView('search')" role="tab">搜索</button>
+        <button class="tab"        id="nav-poets"  onclick="goView('poets')"  role="tab">诗人</button>
+        <button class="tab"        id="nav-about"  onclick="goView('about')"  role="tab">关于</button>
+      </nav>
+
+      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="切换夜间模式" aria-label="切换夜间模式">◐</button>
+    </div>
+
+    <div class="searchbox">
+      <span class="ico" aria-hidden="true">⌕</span>
+      <input id="search-input" type="search" autocomplete="off" spellcheck="false"
+             placeholder="搜索诗名、诗人或诗句…" aria-label="搜索诗词">
+      <span class="hint" id="search-hint">/</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 首页 ============ -->
+<main class="wrap">
+<div id="view-home" class="view active">
+
+  <section class="hero" aria-label="每日一诗">
+    <div class="hero-eyebrow"><span class="dot"></span><span id="daily-date">每日一诗</span></div>
+    <h1 class="hero-title" id="daily-title">　</h1>
+    <div class="hero-meta" id="daily-author"></div>
+    <div class="hero-body" id="daily-body"></div>
+    <div class="hero-tags" id="daily-tags"></div>
+    <div class="hero-actions">
+      <button class="btn refresh-btn" onclick="showRandomPoem()"><span aria-hidden="true">↻</span> 换一首</button>
+      <button class="btn" onclick="copyDaily()"><span aria-hidden="true">⧉</span> 复制</button>
+      <button class="btn btn-primary" onclick="openDailyDetail()">查看详情</button>
+    </div>
+  </section>
+
+  <div class="sec-head">
+    <h2 class="sec-title">按体裁浏览</h2>
+  </div>
+  <div class="cats" id="categories"></div>
+
+  <div class="sec-head">
+    <h2 class="sec-title">存诗最多</h2>
+    <button class="sec-more" onclick="goView('poets')">查看全部 →</button>
+  </div>
+  <p class="poet-note">按本站收录的作品数量排序，不代表文学地位。</p>
+  <div class="poet-groups" id="home-poets"></div>
+</div>
+
+<!-- ============ 搜索 ============ -->
+<div id="view-search" class="view">
+  <div class="filters" id="filters"></div>
+  <select id="search-cat" class="sr-only" onchange="doSearch()" aria-label="体裁筛选">
+    <option value="all">全部</option>
+    <option value="tang">唐诗</option>
+    <option value="song">宋诗</option>
+    <option value="ci">宋词</option>
+    <option value="yuanqu">元曲</option>
+    <option value="shijing">诗经</option>
+    <option value="chuci">楚辞</option>
+    <option value="lunyu">论语</option>
+    <option value="mengxue">蒙学</option>
+  </select>
+
+  <div class="search-meta" id="search-meta"></div>
+  <div class="results" id="search-results"></div>
+  <div class="load-more" id="load-more" style="display:none" onclick="loadMore()">加载更多</div>
+</div>
+
+<!-- ============ 诗人 ============ -->
+<div id="view-poets" class="view">
+  <div class="poet-groups" id="poets-view"></div>
+</div>
+
+<!-- ============ 关于 ============ -->
+<div id="view-about" class="view">
+  <div class="prose">
+    <h2>关于本站</h2>
+    <p>
+      本站基于 <a href="https://github.com/chinese-poetry/chinese-poetry" target="_blank" rel="noopener">chinese-poetry</a>
+      开源数据集构建，是目前最全的中华古典诗词数据库。全部数据采用 MIT 许可，本站仅作学习与展示之用。
+    </p>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">唐诗</div><div class="v">57,607</div></div>
+      <div class="stat"><div class="k">宋诗</div><div class="v">254,248</div></div>
+      <div class="stat"><div class="k">宋词</div><div class="v">21,053</div></div>
+      <div class="stat"><div class="k">元曲</div><div class="v">11,057</div></div>
+      <div class="stat"><div class="k">诗经</div><div class="v">305</div></div>
+      <div class="stat"><div class="k">楚辞</div><div class="v">65</div></div>
+      <div class="stat"><div class="k">论语</div><div class="v">20</div></div>
+      <div class="stat"><div class="k">蒙学</div><div class="v">48</div></div>
+    </div>
+    <p><strong>共 344,404 首</strong>中华古典诗文，涵盖唐宋两朝近 1.4 万位诗人。</p>
+    <p>
+      搜索支持诗名、诗人、诗句全文检索。<strong>简体输入可直接搜到繁体诗文</strong>——
+      数据集主体为繁体（唐诗全库繁体），输入「静夜思」同样能找到李白的《靜夜思》。
+    </p>
+    <p style="font-size:13px; color:var(--ink-3); margin-top:18px;">
+      快捷键：<kbd>/</kbd> 聚焦搜索框 · <kbd>Esc</kbd> 关闭详情 · <kbd>Enter</kbd> 立即搜索
+    </p>
+  </div>
+</div>
+</main>
+
+<!-- ============ 详情抽屉 ============ -->
+<div class="drawer-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="m-title" onclick="event.stopPropagation()">
+    <div class="drawer-head">
+      <div class="drawer-head-text">
+        <div class="d-title" id="m-title"></div>
+        <div class="d-author" id="m-author"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal()" aria-label="关闭">×</button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+      <div class="d-sub" id="m-sub" style="display:none"></div>
+      <div class="d-body" id="m-body"></div>
+      <div class="hero-tags" id="m-tags" style="margin-top:28px;"></div>
+    </div>
+    <div class="drawer-foot">
+      <button class="btn" onclick="copyDetail()"><span aria-hidden="true">⧉</span> 复制全文</button>
+      <button class="btn" onclick="searchAuthorFromDetail()">搜这位诗人</button>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  数据来源 · <a href="https://github.com/chinese-poetry/chinese-poetry" target="_blank" rel="noopener">chinese-poetry</a> · MIT License
+</footer>
+
+<script src="data/t2s_map.js"></script>
+<!-- 27MB 的正文库，浏览器容易走启发式缓存。改数据后改这个版本号，避免用户看到旧内容 -->
+<script src="data/inline_data.js?v=2"></script>
+<script>
+/* ============================================================
+   状态
+   ============================================================ */
+const CATS = {
+  tang:    { name:'唐诗', data:'full_tang',    count:57607 },
+  song:    { name:'宋诗', data:'song_shards', count:254248 },
+  ci:      { name:'宋词', data:'full_ci',      count:21053 },
+  yuanqu:  { name:'元曲', data:'full_yuanqu',  count:11057 },
+  shijing: { name:'诗经', data:'full_shijing', count:305 },
+  chuci:   { name:'楚辞', data:'full_chuci',   count:65 },
+  lunyu:   { name:'论语', data:'full_lunyu',   count:20 },
+  mengxue: { name:'蒙学', data:'full_mengxue', count:48 },
+};
+
+const FILTER_ORDER = ['all','tang','song','ci','yuanqu','shijing','chuci','lunyu','mengxue'];
+
+let poetsData = null;
+let featuredPoems = [];
+let themesData = null;   // 手工补充的主题代表作（覆盖宋诗等三百首之外的）
+let tagsData = null;     // 三百首自带标签，主题主力
+let themeIndex = null;   // 两者合并后的 { 主题: [作品] }
+let dailyPoem = null;
+let detailPoem = null;
+
+const poemStore = {};
+const loadedCats = new Set();
+let songManifest = null;
+const songShardCache = {};
+
+let searchResults = [];
+let searchOffset = 0;
+let searchTimer = null;
+let searchToken = 0;
+const PAGE_SIZE = 20;
+const MAX_RESULTS = 500;
+
+/* ============================================================
+   主题
+   ============================================================ */
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('poetry-theme'); } catch (e) { /* 隐私模式不可用，忽略 */ }
+  const prefersDark = window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.textContent = theme === 'dark' ? '☀' : '◐';
+    btn.title = theme === 'dark' ? '切换到日间模式' : '切换到夜间模式';
+    btn.setAttribute('aria-label', btn.title);
+  }
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem('poetry-theme', next); } catch (e) { /* 存不了就只生效本次 */ }
+}
+
+/* ============================================================
+   启动
+   ============================================================ */
+async function init() {
+  initTheme();
+  renderFilters();
+
+  const [fres, pres, thres, tagres] = await Promise.all([
+    fetch('data/featured.json').then(r => r.json()).catch(() => []),
+    fetch('data/poets.json').then(r => r.json()).catch(() => null),
+    fetch('data/themes.json').then(r => r.json()).catch(() => null),
+    fetch('data/tags.json').then(r => r.json()).catch(() => null),
+  ]);
+  featuredPoems = fres;
+  poetsData = pres;
+  themesData = thres;
+  tagsData = tagres;
+  themeIndex = buildThemeIndex(tagsData, themesData);
+
+  renderDailyPoem();
+  renderCategories();
+  if (poetsData) { renderHomePoets(); renderPoetsView(); }
+}
+
+/* ============================================================
+   每日一诗
+   按当天日期固定：同一天看到的是同一首，刷新不变。
+   ============================================================ */
+function getDailyIndex() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / 86400000);
+  return dayOfYear % featuredPoems.length;
+}
+
+function renderDailyPoem() {
+  if (!featuredPoems.length) return;
+  const now = new Date();
+  const wk = ['日','一','二','三','四','五','六'][now.getDay()];
+  document.getElementById('daily-date').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 · 星期${wk} · 每日一诗`;
+  setDaily(featuredPoems[getDailyIndex()]);
+}
+
+function setDaily(poem) {
+  dailyPoem = poem;
+  document.getElementById('daily-title').textContent = poem.title;
+  document.getElementById('daily-author').innerHTML =
+    escapeHtml(poem.author || '佚名') +
+    (poem.dynasty ? `<span class="dyn">${poem.dynasty}</span>` : '') +
+    (poem.type ? `<span style="color:var(--ink-3)">${poem.type}</span>` : '');
+  document.getElementById('daily-body').innerHTML =
+    (poem.paragraphs || []).map(p => `<p>${escapeHtml(p)}</p>`).join('');
+  document.getElementById('daily-tags').innerHTML =
+    (poem.tags || []).slice(0, 8).map(t => `<span>${escapeHtml(t)}</span>`).join('');
+}
+
+function showRandomPoem() {
+  if (!featuredPoems.length) return;
+  let idx = Math.floor(Math.random() * featuredPoems.length);
+  // 避免抽到和当前完全相同的那首
+  if (featuredPoems.length > 1 && featuredPoems[idx] === dailyPoem) {
+    idx = (idx + 1) % featuredPoems.length;
+  }
+  setDaily(featuredPoems[idx]);
+  const now = new Date();
+  const wk = ['日','一','二','三','四','五','六'][now.getDay()];
+  document.getElementById('daily-date').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 · 星期${wk} · 随机推荐`;
+}
+
+function openDailyDetail() {
+  if (!dailyPoem) return;
+  openDetail({
+    t: dailyPoem.title, a: dailyPoem.author,
+    d: dailyPoem.dynasty, y: dailyPoem.type,
+    p: dailyPoem.paragraphs, tags: dailyPoem.tags,
+    _catName: dailyPoem.dynasty === '唐' ? '唐诗' : '宋词',
+  });
+}
+
+/* ============================================================
+   体裁导航
+   ============================================================ */
+function renderCategories() {
+  const keys = ['tang','song','ci','yuanqu','shijing','chuci','lunyu','mengxue'];
+  document.getElementById('categories').innerHTML = keys.map(k => `
+    <button class="cat-card" onclick="browseCategory('${k}')">
+      <div class="cat-name">${CATS[k].name}</div>
+      <div class="cat-count">${CATS[k].count.toLocaleString()} 首</div>
+    </button>`).join('');
+}
+
+async function browseCategory(key) {
+  goView('search');
+  setCat(key, true);
+  document.getElementById('search-input').value = '';
+  const token = ++searchToken;
+  const metaEl = document.getElementById('search-meta');
+  const listEl = document.getElementById('search-results');
+  metaEl.innerHTML = '<span class="loading">加载中…</span>';
+  listEl.innerHTML = skeleton(4);
+
+  // 宋诗 25 万首不整包载入，只取首片做展示
+  if (key === 'song') {
+    const chunk = await loadSongShard(0);
+    if (token !== searchToken) return;
+    searchResults = chunk.slice(0, 200).map(p => ({ ...p, _cat:'song', _catName:'宋诗' }));
+    searchOffset = 0;
+    metaEl.textContent = '宋诗 · 共 254,248 首，此处展示前 200 首（用搜索可定位全库）';
+    listEl.innerHTML = '';
+    renderResults();
+    return;
+  }
+
+  await loadCategory(key);
+  if (token !== searchToken) return;
+
+  const poems = poemStore[key] || [];
+  searchResults = poems.map(p => ({ ...p, _cat: key, _catName: CATS[key].name }));
+  searchOffset = 0;
+  metaEl.textContent = `${CATS[key].name} · 共 ${searchResults.length.toLocaleString()} 首`;
+  listEl.innerHTML = '';
+  renderResults();
+}
+
+/* ============================================================
+   诗人
+   ============================================================ */
+function renderHomePoets() {
+  // 首页只放精选，不再一次铺满 186 个按钮
+  document.getElementById('home-poets').innerHTML =
+    poetGroup(poetsData.tang.slice(0, 12), '唐诗人') +
+    poetGroup(poetsData.song.slice(0, 12), '宋诗人') +
+    poetGroup(poetsData.ci.slice(0, 12), '宋词人');
+}
+
+function renderPoetsView() {
+  document.getElementById('poets-view').innerHTML =
+    `<p class="poet-note poet-note--lead">榜单按本站收录的作品数量排序。存世量受历史偶然影响很大——有人文集散佚、有人被地方志大量收录，所以它反映的是「留下多少」，不是「写得多好」。</p>` +
+    poetGroup(poetsData.tang, '唐诗 · 存诗最多 50 位', true) +
+    poetGroup(poetsData.song, '宋诗 · 存诗最多 50 位', true) +
+    poetGroup(poetsData.ci, '宋词 · 存词最多 50 位', true);
+}
+
+function poetGroup(list, title, full) {
+  return `<div class="poet-group">
+    <h4>${title}</h4>
+    <div class="poet-grid${full ? ' poet-grid--full' : ''}">
+      ${list.map(p => `
+        <button class="poet-chip" onclick="searchByAuthor('${escapeAttr(p.name)}')">
+          ${escapeHtml(p.name)}<span class="count">${p.count}</span>
+        </button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function searchByAuthor(name) {
+  goView('search');
+  setCat('all', true);
+  document.getElementById('search-input').value = name;
+  doSearch();
+}
+
+/* ============================================================
+   数据加载
+   ============================================================ */
+async function ensureSongManifest() {
+  if (!songManifest) {
+    songManifest = await fetch('data/song_shards/manifest.json').then(r => r.json());
+  }
+  return songManifest;
+}
+
+async function loadSongShard(i) {
+  if (songShardCache[i]) return songShardCache[i];
+  const manifest = await ensureSongManifest();
+  const chunk = await fetch('data/' + manifest[i].file).then(r => r.json());
+  songShardCache[i] = chunk;
+  return chunk;
+}
+
+async function loadCategory(key) {
+  if (loadedCats.has(key)) return;
+  const meta = CATS[key];
+  if (meta.data === 'song_shards') return;
+  poemStore[key] = INLINE_DATA[meta.data] || [];
+  loadedCats.add(key);
+}
+
+/* ============================================================
+   繁简转换
+   数据集主体是繁体，用户多输简体。搜索时同时匹配多种写法，
+   否则搜「静夜思」会一条都找不到。
+   ============================================================ */
+function variantForms(query) {
+  const forms = new Set([query]);
+  const chars = Array.from(query);
+
+  let trad = '', hasTrad = false;
+  for (const c of chars) {
+    const opts = T2S_MAP[c];
+    if (opts && opts.length) {
+      const t = opts.find(o => o !== c) || opts[0];
+      trad += t;
+      if (t !== c) hasTrad = true;
+    } else { trad += c; }
+  }
+  if (hasTrad) forms.add(trad);
+
+  let simp = '', hasSimp = false;
+  for (const c of Array.from(trad)) {
+    const opts = T2S_MAP[c];
+    if (opts && opts.length) {
+      const s = opts.find(o => o !== c) || opts[0];
+      simp += s;
+      if (s !== c) hasSimp = true;
+    } else { simp += c; }
+  }
+  if (hasSimp) forms.add(simp);
+
+  return Array.from(forms);
+}
+
+/**
+ * 主题词匹配。
+ * 古诗里几乎不说「思乡」，古人写「故鄉」「異鄉」「鄉書」。纯字面搜索永远
+ * 搜不到《静夜思》这类主题名篇，所以搜到主题词时把该主题的代表作置顶。
+ *
+ * 主题数据有两份：
+ * - tags.json：《唐诗三百首》《宋词三百首》自带的标签（646 首、200+ 标签），
+ *   是数据集标注好的，作主力；
+ * - themes.json：手工补充的宋诗等三百首之外的作品，同主题下追加。
+ */
+const THEME_ALIAS = {
+  '乡愁': '思乡', '怀乡': '思乡', '乡思': '思乡', '思归': '思乡', '故乡': '思乡', '家乡': '思乡',
+  '离别': '送别', '赠别': '送别', '饯别': '送别', '告别': '送别', '惜别': '送别',
+  '相思': '思念', '恋情': '爱情', '爱慕': '爱情', '怀人': '思念',
+  '征战': '边塞', '从军': '边塞', '戍边': '边塞', '塞外': '边塞', '征人': '边塞',
+  '明月': '月亮', '月色': '月亮', '月光': '月亮', '咏月': '月亮', '月夜': '月亮',
+  '悲秋': '秋天', '秋景': '秋天', '秋日': '秋天', '秋季': '秋天',
+  '春日': '春天', '春景': '春天', '春季': '春天', '咏春': '春天',
+  '隐居': '山水', '田园': '山水', '自然': '山水', '山水田园': '山水',
+  '咏史': '怀古', '古迹': '怀古', '咏史怀古': '怀古', '吊古伤今': '怀古',
+  '寂寞': '孤独', '孤寂': '孤独', '寂寥': '孤独',
+  '朋友': '友情', '友谊': '友情', '知己': '友情', '故人': '友情',
+  '咏梅': '咏物', '梅花': '咏物', '咏竹': '咏物', '托物': '咏物', '托物寄情': '咏物',
+  '言志': '励志', '抱负': '励志', '志向': '励志', '抒志': '励志',
+  '母爱': '母亲', '家人': '亲情', '骨肉': '亲情', '思亲': '亲情',
+  '战乱': '战争', '离乱': '战争', '兵荒': '战争', '烽火': '战争',
+};
+
+function buildThemeIndex(tags, themes) {
+  const out = {};
+  // 手工挑的排前面：那是按知名度选的，而标签数据沿用了原书的体裁顺序，
+  // 直接铺开会把「橫吹曲辭 出塞」排在「靜夜思」前面。
+  for (const [k, th] of Object.entries(themes || {})) {
+    out[k] = (th.works || []).slice();
+  }
+  for (const [k, list] of Object.entries(tags || {})) {
+    if (!out[k]) out[k] = [];
+    const seen = new Set(out[k].map(w => `${w.t}|${w.a}`));
+    for (const w of list) {
+      const key = `${w.t}|${w.a}`;
+      if (!seen.has(key)) { out[k].push(w); seen.add(key); }
+    }
+  }
+  return out;
+}
+
+function matchTheme(query) {
+  if (!themeIndex) return null;
+  const forms = [...new Set(variantForms(query).map(s => String(s).replace(/\s/g, '')))];
+  // 先过别名（乡愁 → 思乡）
+  for (const f of forms) {
+    const canon = THEME_ALIAS[f];
+    if (canon && themeIndex[canon] && themeIndex[canon].length) {
+      return { name: canon, works: themeIndex[canon] };
+    }
+  }
+  // 再直接命中标签名；单字标签不触发（「山」「雪」这类会误伤正常搜索）
+  for (const f of forms) {
+    if (f.length >= 2 && themeIndex[f] && themeIndex[f].length) {
+      return { name: f, works: themeIndex[f] };
+    }
+  }
+  return null;
+}
+
+/**
+ * 元曲碎片归并。
+ * 元曲原始数据按曲牌拆开，《醉思乡王粲登楼》有 19 条（赚煞、混江龙、油葫芦…），
+ * 搜「思乡」时这 19 条会把整屏占满。按「剧名・曲牌」的剧名归并成一条，
+ * 正文按原顺序拼接，详情里能读全剧。
+ */
+function mergeYuanquFragments(list) {
+  const byPlay = new Map();
+  const rest = [];
+  for (const r of list) {
+    const idx = r._cat === 'yuanqu' ? String(r.t || '').indexOf('・') : -1;
+    if (idx <= 0) { rest.push(r); continue; }
+    const play = r.t.slice(0, idx);
+    const cur = byPlay.get(play);
+    if (!cur) {
+      byPlay.set(play, { best: r, frags: [r] });
+    } else {
+      cur.frags.push(r);
+      if (r._score > cur.best._score) cur.best = r;
+    }
+  }
+  for (const [play, { best, frags }] of byPlay) {
+    rest.push({
+      ...best,
+      t: play,
+      p: frags.flatMap(f => f.p || []),
+      _play: play,
+      _fragCount: frags.length,
+    });
+  }
+  return rest;
+}
+
+/* ============================================================
+   搜索
+   ============================================================ */
+function renderFilters() {
+  document.getElementById('filters').innerHTML = FILTER_ORDER.map(k => {
+    const label = k === 'all' ? '全部' : CATS[k].name;
+    return `<button class="chip" data-cat="${k}" onclick="setCat('${k}')">${label}</button>`;
+  }).join('');
+  syncChips('all');
+}
+
+function syncChips(value) {
+  document.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.cat === value);
+  });
+}
+
+function setCat(value, silent) {
+  document.getElementById('search-cat').value = value;
+  syncChips(value);
+  if (!silent) doSearch();
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    const q = document.getElementById('search-input').value.trim();
+    if (q && !document.getElementById('view-search').classList.contains('active')) {
+      goView('search');
+    }
+    doSearch();
+  }, 320);
+}
+
+function skeleton(n) {
+  return `<div class="skeleton">${Array.from({length:n}).map(() => `
+    <div class="sk-item">
+      <div class="sk-line" style="width:34%"></div>
+      <div class="sk-line" style="width:20%; margin-top:10px"></div>
+      <div class="sk-line" style="width:82%; margin-top:10px"></div>
+    </div>`).join('')}</div>`;
+}
+
+async function doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  const cat = document.getElementById('search-cat').value;
+  const metaEl = document.getElementById('search-meta');
+  const listEl = document.getElementById('search-results');
+
+  if (!query) {
+    metaEl.textContent = '输入关键词开始搜索';
+    listEl.innerHTML = '';
+    document.getElementById('load-more').style.display = 'none';
+    searchResults = [];
+    return;
+  }
+
+  const token = ++searchToken;
+  metaEl.innerHTML = '<span class="loading">搜索中…</span>';
+  listEl.innerHTML = skeleton(3);
+
+  const cats = cat === 'all' ? FILTER_ORDER.slice(1) : [cat];
+  const forms = variantForms(query);
+
+  const inlineCats = cats.filter(c => c !== 'song');
+  const toLoad = inlineCats.filter(c => !loadedCats.has(c));
+  if (toLoad.length) {
+    metaEl.innerHTML = '<span class="loading">加载数据…</span>';
+    for (const c of toLoad) await loadCategory(c);
+    if (token !== searchToken) return;
+  }
+
+  const results = [];
+  const consider = (item, c) => {
+    const t = item.t || '';
+    const a = item.a || '';
+    const text = (item.p || []).join('');
+    let score = 0;
+    for (const f of forms) {
+      if (t === f) score = Math.max(score, 100);
+      else if (a === f) score = Math.max(score, 95);
+      else if (t.includes(f)) score = Math.max(score, 80);
+      else if (a.includes(f)) score = Math.max(score, 70);
+      else if (text.includes(f)) score = Math.max(score, 40);
+    }
+    if (score > 0) {
+      // 同档位内标题短的略靠前，但不跨越档位
+      results.push({
+        ...item, _cat: c, _catName: CATS[c].name, _forms: forms,
+        _score: score + Math.max(0, 20 - t.length) * 0.1,
+      });
+    }
+  };
+
+  for (const c of inlineCats) {
+    for (const item of poemStore[c] || []) consider(item, c);
+  }
+
+  // 宋诗流式检索：逐片读取，命中够了就停，避免一次载入 66MB
+  let truncated = false;
+  let scanned = 0;
+  if (cats.includes('song')) {
+    const manifest = await ensureSongManifest();
+    for (let i = 0; i < manifest.length; i++) {
+      if (token !== searchToken) return;
+      const chunk = await loadSongShard(i);
+      for (const item of chunk) consider(item, 'song');
+      scanned += chunk.length;
+      metaEl.innerHTML =
+        `<span class="loading">检索宋诗 ${i+1}/${manifest.length} 片 · ` +
+        `已扫 ${scanned.toLocaleString()} 首 · 命中 ${results.length.toLocaleString()} 条</span>`;
+      if (results.length >= MAX_RESULTS) { truncated = true; break; }
+    }
+  }
+
+  if (token !== searchToken) return;
+
+  // 元曲碎片先归并再排序，否则一部杂剧的十几个曲牌会挤满前排
+  const merged = mergeYuanquFragments(results);
+  merged.sort((x, y) => y._score - x._score);
+
+  // 主题词：把该主题的代表作置顶，并从普通结果里剔掉重复项
+  const theme = matchTheme(query);
+  let head = [];
+  if (theme) {
+    head = theme.works.map(w => ({
+      ...w,
+      _cat: w.c,
+      _catName: (CATS[w.c] || {}).name || '',
+      _forms: forms,
+      _score: 999,
+      _theme: theme.name,
+    }));
+    const keys = new Set(head.map(w => `${w.t}|${w.a}`));
+    for (let i = merged.length - 1; i >= 0; i--) {
+      if (keys.has(`${merged[i].t}|${merged[i].a}`)) merged.splice(i, 1);
+    }
+  }
+
+  const finalList = head.concat(merged);
+  if (finalList.length > MAX_RESULTS) { finalList.length = MAX_RESULTS; truncated = true; }
+
+  searchResults = finalList;
+  searchOffset = 0;
+
+  if (!finalList.length) {
+    metaEl.textContent = `没有找到「${query}」`;
+    listEl.innerHTML = emptyState(query);
+    document.getElementById('load-more').style.display = 'none';
+    return;
+  }
+
+  metaEl.textContent = `找到 ${finalList.length.toLocaleString()} 条结果` +
+    (theme ? ` · 「${theme.name}」名篇 ${head.length} 首已置顶` : '') +
+    (truncated ? `（已达上限 ${MAX_RESULTS} 条，加关键词可缩小范围）` : '');
+  listEl.innerHTML = '';
+  renderResults();
+}
+
+function emptyState(query) {
+  return `<div class="empty">
+    <div class="mark">無</div>
+    <p>没有找到「${escapeHtml(query)}」</p>
+    <p class="sub">试试换个词，或用简体/繁体另一种写法</p>
+  </div>`;
+}
+
+function renderResults() {
+  const el = document.getElementById('search-results');
+  const page = searchResults.slice(searchOffset, searchOffset + PAGE_SIZE);
+  // 已经按体裁筛选时，每条再挂一个体裁标签就是纯噪音；只在「全部」下显示
+  const showCat = document.getElementById('search-cat').value === 'all';
+
+  const html = page.map((item, i) => {
+    const idx = searchOffset + i;
+    const preview = (item.p || []).join(' ').slice(0, 90);
+    const forms = item._forms || [];
+    const sub = item.s ? ` · ${escapeHtml(item.s)}` : '';
+    return `<article class="result-item" onclick="openDetailByIndex(${idx})" tabindex="0"
+              onkeydown="if(event.key==='Enter'){openDetailByIndex(${idx})}">
+      <div class="ri-top">
+        <span class="ri-title">${highlight(item.t || '无题', forms)}</span>
+        ${item._theme ? `<span class="ri-theme">${escapeHtml(item._theme)}名篇</span>` : ''}
+        ${item._fragCount ? `<span class="ri-cat">杂剧 · ${item._fragCount} 折</span>` : ''}
+        ${showCat && !item._fragCount ? `<span class="ri-cat">${item._catName}</span>` : ''}
+      </div>
+      <div class="ri-author">${highlight(item.a || '佚名', forms)}${sub}</div>
+      <div class="ri-preview">${highlight(preview, forms)}</div>
+    </article>`;
+  }).join('');
+
+  el.insertAdjacentHTML('beforeend', html);
+
+  document.getElementById('load-more').style.display =
+    (searchOffset + PAGE_SIZE < searchResults.length) ? 'block' : 'none';
+}
+
+function loadMore() {
+  searchOffset += PAGE_SIZE;
+  renderResults();
+}
+
+/**
+ * 高亮：先转义再插标签，避免搜索词里的 HTML 被执行。
+ * 多个异体形式按长度倒序替换，防止短词先吃掉长词的匹配位置。
+ */
+function highlight(text, forms) {
+  const safe = escapeHtml(text);
+  const list = (Array.isArray(forms) ? forms : [forms]).filter(Boolean);
+  const sorted = list.slice().sort((a, b) => b.length - a.length);
+  let out = safe;
+  for (const f of sorted) {
+    const esc = f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(
+      new RegExp('(?![^<]*>\\w*</mark>)([^<]*?)(' + esc + ')', 'g'),
+      '$1<mark>$2</mark>'
+    );
+  }
+  return out;
+}
+
+/* ============================================================
+   详情抽屉
+   ============================================================ */
+function openDetailByIndex(index) {
+  const item = searchResults[index];
+  if (item) openDetail(item);
+}
+
+function openDetail(item) {
+  detailPoem = item;
+  // 朝代+体裁合成一项显示在作者后面（「李如璧 唐诗」），
+  // 下面标签区就不再重复它，避免同一个信息出现两次
+  const kind = [item.d, item.y].filter(Boolean).join('');
+  const badge = item._catName || kind;
+
+  document.getElementById('m-title').textContent = item.t || '无题';
+  document.getElementById('m-author').innerHTML =
+    escapeHtml(item.a || '佚名') +
+    (badge ? `<span class="dyn">${escapeHtml(badge)}</span>` : '');
+
+  const subEl = document.getElementById('m-sub');
+  if (item.s) { subEl.textContent = item.s; subEl.style.display = 'block'; }
+  else { subEl.style.display = 'none'; }
+
+  document.getElementById('m-body').innerHTML =
+    (item.p || []).map(p => `<p>${escapeHtml(p)}</p>`).join('');
+
+  document.getElementById('m-tags').innerHTML =
+    (item.tags || []).slice(0, 8)
+      .map(t => `<span>${escapeHtml(t)}</span>`).join('');
+
+  // 长诗从头读起，不要继承上一次的滚动位置
+  document.getElementById('drawer-body').scrollTop = 0;
+  document.getElementById('modal-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function searchAuthorFromDetail() {
+  if (!detailPoem) return;
+  const name = detailPoem.a;
+  closeModal();
+  searchByAuthor(name);
+}
+
+/* ============================================================
+   复制
+   ============================================================ */
+function poemToText(item) {
+  if (!item) return '';
+  const head = [item.t || item.title, item.a || item.author].filter(Boolean).join(' · ');
+  const body = (item.p || item.paragraphs || []).join('\n');
+  return `${head}\n\n${body}`;
+}
+
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) { /* 落到下面的兜底方案 */ }
+
+  // 兜底：非安全上下文（如用 IP 访问）没有 clipboard API
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function copyDaily() {
+  const ok = await copyText(poemToText({
+    t: dailyPoem?.title, a: dailyPoem?.author, p: dailyPoem?.paragraphs,
+  }));
+  toast(ok ? '已复制' : '复制失败，请手动选择');
+}
+
+async function copyDetail() {
+  const ok = await copyText(poemToText(detailPoem));
+  toast(ok ? '已复制全文' : '复制失败，请手动选择');
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* ============================================================
+   工具
+   ============================================================ */
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/'/g, '&#39;');
+}
+
+/* ============================================================
+   导航
+   ============================================================ */
+function goView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(a => a.classList.remove('active'));
+  const target = document.getElementById('view-' + view);
+  const tab = document.getElementById('nav-' + view);
+  if (target) target.classList.add('active');
+  if (tab) tab.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+/* ============================================================
+   键盘
+   ============================================================ */
+document.addEventListener('keydown', e => {
+  const input = document.getElementById('search-input');
+  const inInput = document.activeElement === input;
+  const tag = document.activeElement.tagName;
+
+  if (e.key === 'Escape') {
+    if (document.getElementById('modal-overlay').classList.contains('show')) closeModal();
+    else if (inInput) input.blur();
+  }
+  // 「/」快速聚焦搜索，是搜索型站点的通用习惯
+  if (e.key === '/' && !inInput && !['INPUT','TEXTAREA','SELECT'].includes(tag)) {
+    e.preventDefault();
+    input.focus();
+    input.select();
+  }
+  if (e.key === 'Enter' && inInput) doSearch();
+});
+
+document.getElementById('search-input').addEventListener('input', debounceSearch);
+
+init();
+</script>
+</body>
+</html>
