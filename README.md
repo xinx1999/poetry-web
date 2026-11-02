@@ -1,5 +1,7 @@
 # 古诗词库
 
+**在线访问：** https://xinx1999.github.io/poetry-web/
+
 中华古典诗词搜索 / 浏览站点。数据来自 [chinese-poetry](https://github.com/chinese-poetry/chinese-poetry)（MIT）。
 
 **全站简体。** 原始数据集主体是繁体（唐诗全库繁体），构建时用 opencc 整句转换成了简体。
